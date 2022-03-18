@@ -8,13 +8,26 @@ package sample.spring.xsuaa;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+import javax.servlet.http.HttpServlet;
+
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,10 +38,51 @@ import com.sap.cloud.security.xsuaa.tokenflows.XsuaaTokenFlows;
 
 import static com.sap.cloud.security.xsuaa.token.TokenClaims.CLAIM_USER_NAME;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
+//AWS Imports
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.internal.StaticCredentialsProvider;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
+import com.amazonaws.services.s3.model.DeleteVersionRequest;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.ListVersionsRequest;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.ResponseHeaderOverrides;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.S3VersionSummary;
+import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
+import com.amazonaws.services.s3.model.VersionListing;
+import com.nimbusds.jose.shaded.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 public class TestController {
 
     private static final Logger logger = LoggerFactory.getLogger(TestController.class);
+
+    private static final org.springframework.http.HttpStatus HttpStatus = null;
 
     /**
      * The injected factory for XSUAA token tokenflows.
@@ -59,138 +113,245 @@ public class TestController {
      * @return the requested address.
      * @throws Exception in case of an internal error.
      */
-    @GetMapping("/v1/sayHello")
-    public Map<String, String> sayHello(@AuthenticationPrincipal Token token) {
-
-        logger.info("Got the Xsuaa token: {}", token.getAppToken());
-        logger.info(token.toString());
-
-        Map<String, String> result = new HashMap<>();
-        result.put("grant type", token.getGrantType());
-        result.put("client id", token.getClientId());
-        result.put("subaccount id", token.getSubaccountId());
-        result.put("zone id", token.getZoneId());
-        result.put("logon name", token.getLogonName());
-        result.put("family name", token.getFamilyName());
-        result.put("given name", token.getGivenName());
-        result.put("email", token.getEmail());
-        result.put("authorities", String.valueOf(token.getAuthorities()));
-        result.put("scopes", String.valueOf(token.getScopes()));
-
-        return result;
-    }
-
-    /**
-     * Returns some generic information from the JWT token.<br>
-     * Uses a Jwt retrieved from the security context of Spring Security.
-     *
-     * @param jwt the JWT from the request injected by Spring Security.
-     * @return the requested address.
-     * @throws Exception in case of an internal error.
-     */
-    @GetMapping("/v2/sayHello")
-    public String sayHello(@AuthenticationPrincipal Jwt jwt) {
-
-        logger.info("Got the JWT: {}", jwt);
-        logger.info(jwt.getClaimAsString(CLAIM_USER_NAME));
-        logger.info(jwt.toString());
-
-        return "Hello Jwt-Protected World!";
-    }
-
-    /**
-     * An endpoint showing how to use Spring method security.
-     * Only if the request principal has the given scope will the
-     * method be called. Otherwise a 403 error will be returned.
-     */
-    @GetMapping("/v1/method")
-    @PreAuthorize("hasAuthority('Read')")
-    public String callMethodRemotely() {
-        return "Read-protected method called!";
-    }
-
-    /**
-     * More advanced showcase for global method security.
-     * The {@link DataService} interface uses annotated methods
-     * and when the {@link DataService} gets injected as a bean
-     * Spring Security wraps it with a security-enforcing wrapper.
-     * The result is, that the {@link DataService#readSensitiveData()} method
-     * will only be called if the proper scopes are available.
-     *
-     * @return the sensitive data read from the {@link DataService} or fails
-     * with an access denied error.
-     *
-     * @see {@link DataService}.
-     */
-    @GetMapping("/v1/getAdminData")
-    public String readFromDataService() {
-        return dataService.readSensitiveData();
-    }
     
-    /**
-     * REST endpoint showing how to fetch a client credentials Token from XSUAA using the
-     * {@link XsuaaTokenFlows} API.
-     * @throws TokenFlowException in case of any errors.
-     */
-    @GetMapping("/v3/requestClientCredentialsToken")
-    public String requestClientCredentialsToken() throws TokenFlowException {
+    @GetMapping("/v1/ListObjects")
+    public ListObjectsV2Result ListObjects() {
+    //return "Goodbye from Spring Boot";
+    final String USAGE = "\n" + "To run this example, supply the name of a bucket to list!\n" + "\n"
+                + "Ex: ListObjects <bucket-name>\n";
+        String bucket_name = "myawsbucket-alag";
+        // if (args.length < 1) {
+        // System.out.println(USAGE);
+        // System.exit(1);
+        // }
 
-        OAuth2TokenResponse clientCredentialsTokenResponse = tokenFlows.clientCredentialsTokenFlow().execute();
-        logger.info("Got the Client Credentials Token: {}", clientCredentialsTokenResponse.getAccessToken());
+        // System.out.format("Objects in S3 bucket %s:\n", bucket_name);
 
-        return clientCredentialsTokenResponse.getDecodedAccessToken().getPayload();
+        // AWSCredentialsProvider aws = new AWSCredentialsProvider();
+        // final AmazonS3 s3 =
+        // AmazonS3ClientBuilder.standard().withRegion("us-east-2").build();
+        // AWSCredentialsProvider sd = new AWSCredentialsProvider(ds);
+
+        BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
+                "Access Secret Key");
+        StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+        // final AmazonS3 s3 =
+        // AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(sd).build();
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+        // AmazonS3Client s4 = AmazonS3Client.builder().creden
+        // Bucket bucket = s3.createBucket("check");
+
+        System.out.format("Objects in S3 bucket %s:\n", bucket_name);
+        ListObjectsV2Result result = s3.listObjectsV2(bucket_name);
+        List<S3ObjectSummary> objects = result.getObjectSummaries();
+        for (S3ObjectSummary os : objects) {
+            System.out.println("* " + os.getKey());
+        }
+       return result;
     }
 
-    /**
-     * REST endpoint showing how to exchange an access token from XSUAA for another one intended for another service.
-     * This endpoint shows how to use the {@link XsuaaTokenFlows} API.
-     * <p>
-     * The idea behind a user token exchange is to separate service-specific access scopes into separate tokens.
-     * For example, if Service A has scopes specific to its functionality and Service B has other scopes, the intention is
-     * that there is no single Jwt token that contains all of these scopes.<br>
-     * Rather the intention is to have a Jwt token to call Service A (containing just the scopes of Service A),
-     * and another one to call Service B (containing just the scopes of Service B). An application calling Service A and
-     * B on behalf of a user therefore has to exchange the user's Jwt token against a token for Service A and B respectively
-     * before calling these services. This scenario is handled by the user token flow.
-     * <p>
-     *
-     *
-     * @param token - the Jwt as a result of authentication.
-     * @throws TokenFlowException in case of any errors.
-     */
-    @GetMapping("/v3/requestUserToken")
-    public String requestUserToken(@AuthenticationPrincipal Token token) throws TokenFlowException {
-        OAuth2TokenResponse userTokenResponse = tokenFlows.userTokenFlow()
-                .token(token.getAppToken())
-                .subdomain(token.getSubdomain())
-                .execute();
-
-        logger.info("Got the exchanged token for 3rd party service: {}", userTokenResponse);
-        logger.info("You can now call the 3rd party service passing the exchanged token value: {}. ", userTokenResponse);
-
-        return "<p>The access-token (decoded):</p><p>" + userTokenResponse.getDecodedAccessToken().getPayload()
-                + "</p><p>The refresh-token: </p><p>" + userTokenResponse.getRefreshToken()
-                + "</p><p>The access-token (encoded) can be found in the logs 'cf logs spring-security-xsuaa-usage --recent'</p>";
+    @GetMapping("/v1/ListVersionsRequest")
+    public List<S3VersionSummary> ListVersionsRequest() {
+        //return "Goodbye from Spring Boot";
+        final String USAGE = "\n" + "To run this example, supply the name of a bucket to list!\n" + "\n"
+                    + "Ex: ListObjects <bucket-name>\n";
+            String bucket_name = "myawsbucket-alag";
+    
+            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
+                    "Access Secret Key");
+            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+        
+        // Retrieve the list of versions. If the bucket contains more versions
+        // than the specified maximum number of results, Amazon S3 returns
+        // one page of results per request.
+    ListVersionsRequest request = new ListVersionsRequest().withBucketName(bucket_name).withMaxResults(200);
+    VersionListing versionListing = s3.listVersions(request);
+    int numVersions = 0, numPages = 0;
+    
+    List<S3VersionSummary> objectSummary = versionListing.getVersionSummaries();
+    
+    while (true) {
+    numPages++;
+    for (S3VersionSummary s3v : objectSummary) {
+    System.out.printf("Retrieved object %s, version %s\n", s3v.getKey(), s3v.getVersionId());
+    numVersions++;
     }
-
-    /**
-     * REST endpoint showing how to retrieve an access token for a refresh token from XSUAA using the
-     * {@link XsuaaTokenFlows} API.
-     * @param jwt - the Jwt as a result of authentication.
-     * @param refreshToken - the refresh token an access token is requested
-     * @throws TokenFlowException in case of any errors.
-     */
-    @GetMapping("/v3/requestRefreshToken/{refreshToken}")
-    public String requestRefreshToken(@AuthenticationPrincipal Jwt jwt, @PathVariable("refreshToken") String refreshToken) throws TokenFlowException {
-
-        OAuth2TokenResponse refreshTokenResponse = tokenFlows.refreshTokenFlow()
-        		.refreshToken(refreshToken)
-                .execute();
- 
-        logger.info("Got the access token for the refresh token: {}", refreshTokenResponse.getAccessToken());
-        logger.info("You could now inject this into Spring's SecurityContext, using: SpringSecurityContext.init(...).");
-
-        return refreshTokenResponse.getDecodedAccessToken().getPayload();
+    // Check whether there are more pages of versions to retrieve. If there are, retrieve them. Otherwise, exit the loop.
+    if (versionListing.isTruncated()) {
+    versionListing = s3.listNextBatchOfVersions(versionListing);
+    } else {
+    break;
     }
+}
+           return objectSummary;
+        }
 
+        @GetMapping("/v1/BucketVersionHandler")
+        public String BucketVersionHandler() {
+		
+            String bucket_name = "myawsbucket-alag";
+    
+            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
+                    "Access Secret Key");
+            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+            
+            // Enable versioning on the bucket.
+            BucketVersioningConfiguration configuration = new BucketVersioningConfiguration().withStatus("Enabled");            
+            SetBucketVersioningConfigurationRequest setBucketVersioningConfigurationRequest = new SetBucketVersioningConfigurationRequest(bucket_name,configuration);
+            s3.setBucketVersioningConfiguration(setBucketVersioningConfigurationRequest);
+            return "Bucket Versioning Modified";
+
+        }
+
+        @GetMapping("/v1/BucketVersionStatus")
+        public BucketVersioningConfiguration BucketVersionStatus() {
+		
+            String bucket_name = "myawsbucket-alag";
+    
+            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
+                    "Access Secret Key");
+            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+    
+            // Get bucket versioning configuration information.
+            BucketVersioningConfiguration conf = s3.getBucketVersioningConfiguration(bucket_name);
+            System.out.println("bucket versioning configuration status:    " + conf.getStatus());
+            return conf ;
+        }
+        
+        @GetMapping("/v1/GetObject")
+        public String GetObject() {
+		
+            String bucket_name = "myawsbucket-alag";
+            String object_key = "customer.tbl";
+    
+            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
+                    "Access Secret Key");
+            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+    
+
+    System.out.format("Downloading object %s from S3 bucket: %s\n", object_key,
+            bucket_name);
+    try {
+        s3.getObject(new GetObjectRequest(bucket_name, object_key));
+    } catch (AmazonServiceException e) {
+        System.err.println(e.getErrorMessage());
+        System.exit(1);
+    }
+    System.out.println("Done!");
+            return "Downloaded the Object" ;
+        }
+
+        @GetMapping("/v1/DeleteObject")
+        public String DeleteObject() {
+		
+            String bucket_name = "myawsbucket-alag";
+            String object_key = "nation.tbl";
+    
+            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
+                    "Access Secret Key");
+            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+    
+
+    System.out.format("Deleting object %s from S3 bucket: %s\n", object_key,
+            bucket_name);
+    try {
+        s3.deleteObject(bucket_name, object_key);
+    } catch (AmazonServiceException e) {
+        System.err.println(e.getErrorMessage());
+        System.exit(1);
+    }
+    System.out.println("Done!");
+            return "Deleted the Object" ;
+        }
+
+        @GetMapping("/v1/DeleteObjectVersion")
+        public String DeleteObjectVersion() {
+		
+            String bucket_name = "myawsbucket-alag";
+            String object_key = "nation.tbl";
+            String version_key = "SlZA0maq1ujOYQW1frQuJkyAvCWt5_1e";
+    
+            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
+                    "Access Secret Key");
+            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+    
+
+    System.out.format("Deleting object %s from S3 bucket: %s\n", object_key,
+            bucket_name);
+    try {
+        s3.deleteVersion(new DeleteVersionRequest(bucket_name, object_key, version_key));
+    } catch (AmazonServiceException e) {
+        System.err.println(e.getErrorMessage());
+        System.exit(1);
+    }
+    System.out.println("Done!");
+            return "Deleted the Object Version" ;
+        }
+    // PUT object
+        
+    @GetMapping("/v1/PutObjects")
+        public String PutObjects() {
+
+            //Time Code
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");  
+            LocalDateTime now = LocalDateTime.now();  
+            System.out.println(dtf.format(now));  
+		
+            String bucket_name = "myawsbucket-alag";
+            String file_content = "Sample File Upload  " + dtf.format(now);
+            String file_name = "PutFileNewMethod.txt"; 
+      
+            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
+                    "Access Secret Key");
+            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+    
+        System.out.format("Uploading %s to S3 bucket %s...\n", file_name, bucket_name);
+        try {
+            s3.putObject(bucket_name, file_name, file_content);
+        } catch (AmazonServiceException e) {
+            System.err.println(e.getErrorMessage());
+            System.exit(1);
+        }
+        System.out.println("Done!");
+        return "Uploaded Successfully!";
+    }    
+
+    //GET OBJECTS
+    @GetMapping("/v1/GetObjects")
+    public JSONObject GetObjects() {
+
+        String bucket_name = "myawsbucket-alag";
+        String file_name = "PutFileNewMethod.txt"; 
+  
+        BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
+                "Access Secret Key");
+        StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+        
+        S3Object o = s3.getObject(bucket_name, file_name);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(o.getObjectContent()));
+		StringBuilder sbuilder = new StringBuilder();
+		String line;
+		try {
+            while ((line = reader.readLine()) != null) {
+            	sbuilder.append(line);
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+		
+		JSONObject result = new JSONObject();
+		result.put("file_content", sbuilder.toString());
+		result.put("file_meta",o.getObjectMetadata().getRawMetadata());
+		
+		return result;
+} 
 }

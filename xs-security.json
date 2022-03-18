@@ -1,10 +1,12 @@
 {
-  "xsappname": "spring-security-xsuaa-usage",
-  "oauth2-configuration": {
-    "credential-types": ["x509"]
-  },
-  "tenant-mode": "dedicated",
+   "xsappname": "app-btp-object-store",
+   "tenant-mode": "dedicated",
+   "description": "Security profile of called application",
   "scopes": [
+    {
+        "name": "uaa.user",
+        "description": "UAA"
+    },
     {
       "name": "$XSAPPNAME.Read",
       "description": "Read Permissions."
@@ -15,6 +17,13 @@
     }
   ],
   "role-templates": [
+    {
+        "name": "Token_Exchange",
+        "description": "UAA",
+        "scope-references": [
+          "uaa.user"
+        ]
+    },
     {
       "name": "Viewer",
       "description": "View Data",
@@ -34,14 +43,14 @@
   ],
   "role-collections": [
     {
-      "name": "Viewer",
+      "name": "Viewer_Obj",
       "description": "Viewer (read)",
       "role-template-references": [
         "$XSAPPNAME.Viewer"
       ]
     },
     {
-      "name": "Administrator",
+      "name": "Administrator_Obj",
       "description": "Administrator (read all)",
       "role-template-references": [
         "$XSAPPNAME.Administrator"

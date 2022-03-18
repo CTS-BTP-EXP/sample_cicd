@@ -1,5 +1,5 @@
 {
-  "xsappname": "spring-xsuaa-usage",
+  "xsappname": "app-btp-object-store",
   "tenant-mode": "dedicated",
   "scopes": [
     {
@@ -31,14 +31,14 @@
   ],
   "role-collections": [
     {
-      "name": "Viewer",
+      "name": "Viewer_Obj",
       "description": "Viewer (read)",
       "role-template-references": [
         "$XSAPPNAME.Viewer"
       ]
     },
     {
-      "name": "Administrator",
+      "name": "Administrator_Obj",
       "description": "Administrator (read all)",
       "role-template-references": [
         "$XSAPPNAME.Administrator"

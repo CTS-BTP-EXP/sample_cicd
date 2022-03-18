@@ -1,14 +1,14 @@
 <!DOCTYPE HTML>
 <html>
-	<head>Spring Security &amp; XSUAA</head>
+	<head>App BTP - Object Store</head>
 	<body>
 	<ul>
-		<li><a href="/v1/sayHello">GET /v1/sayHello request that provides XSUAA user token details, but only if token matches.</a></li>
-		<li><a href="/v1/method">GET /v1/method request executes a method secured with Spring Global Method Security.</a></li>
-		<li><a href="/v1/getAdminData">GET /v1/getAdminData request to read sensitive data via Global Method Security. You will get a 403 (UNAUTHORIZED), in case you do not have Admin scope.</a></li>
-		<li><a href="/v2/sayHello">GET /v2/sayHello request that logs generic JWT info, but only if token matches.</a></li>
-		<li><a href="/v3/requestClientCredentialsToken">GET /v3/requestClientCredentialsToken request that requests the client credentials JWT token and writes it into the log.</a></li>
-		<li><a href="/v3/requestUserToken">GET /v3/requestUserToken request that exchanges a JWT token for a potential different client.</a></li>
+		<li><a href="/v1/ListObjects">GET /v1/ListObjects request that provides List of Objects present in the provided S3 Bucket.</a></li>
+		<li><a href="/v1/ListVersionsRequest">GET /v1/ListVersions request that provides List of Objects present in the provided S3 Bucket with Versions.</a></li>
+		<li><a href="/v1/BucketVersionHandler">GET /v1/BucketVersionHandler Method to modify Bucket versioning Status</a></li>
+		<li><a href="/v1/BucketVersionStatus">GET /v1/BucketVersionStatus request to show Bucket versioning Status</a></li>
+        <li><a href="/v1/GetObjects">GET /v1/GetObject request to get object from the AWS S3 Bucket</a></li>
+        <li><a href="/v1/PutObjects">GET /v1/PutObject request to put object in the AWS S3 Bucket</a></li>
 	</ul>
 	</body>
 </html>

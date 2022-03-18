@@ -8,7 +8,10 @@ package sample.spring.xsuaa;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
 
 /**
  * Simple DataLayer interface that shows how Spring global message security
@@ -29,4 +32,5 @@ public class DataService {
         logger.info("Reading sensitive data.");
         return "You got the sensitive data";
     }
+
 }

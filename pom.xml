@@ -14,10 +14,10 @@
 		<relativePath/>
 	</parent>
 
-	<groupId>com.sap.cloud.security.samples</groupId>
-	<artifactId>spring-security-xsuaa-usage</artifactId>
+	<groupId>objectstore</groupId>
+	<artifactId>app-btp-object-store</artifactId>
 	<version>2.11.13</version>
-	<name>spring-security-xsuaa-usage</name>
+	<name>app-btp-object-store</name>
 
 	<properties>
 		<!-- 
@@ -72,6 +72,21 @@
 			<artifactId>junit-jupiter-engine</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+        <!--AWS Dependencies-->
+        <dependency>
+	      <groupId>com.amazonaws</groupId>
+	      <artifactId>aws-java-sdk-bom</artifactId>
+	      <version>1.11.600</version>
+	      <type>pom</type>
+	      <scope>import</scope>
+	    </dependency>
+	    
+	    <dependency>
+	      <groupId>com.amazonaws</groupId>
+	      <artifactId>aws-java-sdk-s3</artifactId>
+	      <version>1.11.600</version>
+	    </dependency>
 	</dependencies>
 
 	<build>

@@ -6,32 +6,32 @@
 # If the route is occupied, you might need to change ID in ../vars.yml
 applications:
 # The sample application.
-- name: spring-security-xsuaa-usage
+- name: app-btp-object-store
   instances: 1
   memory: 896M
   routes:
-    - route: spring-security-xsuaa-usage-((ID)).((LANDSCAPE_APPS_DOMAIN))
-  path: target/spring-security-xsuaa-usage.jar
+    - route: app-btp-object-store-((ID)).((LANDSCAPE_APPS_DOMAIN))
+  path: target/app-btp-object-store.jar
   services:
-    - xsuaa-authentication
+    - xsuaa-btp-objectstore
   env:
     IAS_XSUAA_XCHANGE_ENABLED: true
 
 # Application Router as web server
-- name: approuter-spring-security-xsuaa-usage
+- name: approuter-app-btp-object-store
   path: approuter
   buildpacks:
     - nodejs_buildpack
   memory: 128M
   routes:
-    - #route: spring-security-xsuaa-usage-web-((ID)).((LANDSCAPE_APPS_DOMAIN))
+    - route: app-btp-object-store-web-((ID)).((LANDSCAPE_APPS_DOMAIN))
   services:
-    - xsuaa-authentication
+    - xsuaa-btp-objectstore
   env:
     destinations: >
       [
         {"name":"token-destination",
-         "url":"https://spring-security-xsuaa-usage-((ID)).((LANDSCAPE_APPS_DOMAIN))",
+         "url":"https://app-btp-object-store-((ID)).((LANDSCAPE_APPS_DOMAIN))",
          "forwardAuthToken": true}
       ]
 ...

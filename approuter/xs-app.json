@@ -1,5 +1,5 @@
 {
-  "welcomeFile": "index.html",
+  "welcomeFile": "/index.html",
   "authenticationMethod": "route",
   "routes": [
     {
@@ -20,5 +20,8 @@
       "destination": "token-destination",
       "authenticationType": "xsuaa"
     }
-  ]
+  ],
+  "logout": {
+    "logoutEndpoint": "/logout"
+  }
 }

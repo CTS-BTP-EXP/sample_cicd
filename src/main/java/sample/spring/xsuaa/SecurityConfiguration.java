@@ -18,6 +18,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.Jwt;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
+//import static org.springframework.http.HttpMethod.PUT;
 
 import com.sap.cloud.security.xsuaa.token.TokenAuthenticationConverter;
 
@@ -40,12 +43,15 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS) // session is created by approuter
 			.and()
 				.authorizeRequests()
-				.antMatchers("/v1/sayHello").hasAuthority("Read")
-				.antMatchers("/v1/*").authenticated()
-				.antMatchers("/v2/*").hasAuthority("Read")
-				.antMatchers("/v3/*").hasAuthority("Read")
-				.antMatchers("/v3/requestRefreshToken/*").hasAuthority("Read")
-				.antMatchers("/health").permitAll()
+				.antMatchers(GET,"/v1/sayHello").hasAuthority("Read")
+                .antMatchers(GET,"/v1/logout").permitAll()
+                //.antMatchers(POST, "/api/v1/ads/**").hasAuthority("Update")
+                .antMatchers(POST,"/v2/postHello").permitAll()
+				.antMatchers(GET,"/v1/*").authenticated()
+				.antMatchers(GET,"/v2/*").hasAuthority("Read")
+				.antMatchers(GET,"/v3/*").hasAuthority("Read")
+				.antMatchers(GET,"/v3/requestRefreshToken/*").hasAuthority("Read")
+				.antMatchers(GET,"/health").permitAll()
 				.anyRequest().denyAll()
 			.and()
 				.oauth2ResourceServer()
