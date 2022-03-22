@@ -1,5 +1,5 @@
-/home/user/projects/app_btp_object_store/src/main/java/sample/spring/xsuaa/Application.java
-/home/user/projects/app_btp_object_store/src/main/java/sample/spring/xsuaa/TestController.java
-/home/user/projects/app_btp_object_store/src/main/java/sample/spring/xsuaa/AWSConfig.java
-/home/user/projects/app_btp_object_store/src/main/java/sample/spring/xsuaa/DataService.java
-/home/user/projects/app_btp_object_store/src/main/java/sample/spring/xsuaa/SecurityConfiguration.java
+/home/user/projects/Object_Store_Repo/src/main/java/sample/spring/xsuaa/TestController.java
+/home/user/projects/Object_Store_Repo/src/main/java/sample/spring/xsuaa/SecurityConfiguration.java
+/home/user/projects/Object_Store_Repo/src/main/java/sample/spring/xsuaa/DataService.java
+/home/user/projects/Object_Store_Repo/src/main/java/sample/spring/xsuaa/AWSConfig.java
+/home/user/projects/Object_Store_Repo/src/main/java/sample/spring/xsuaa/Application.java
