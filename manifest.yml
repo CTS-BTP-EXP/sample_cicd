@@ -13,6 +13,7 @@ applications:
     - route: app-btp-object-store-((ID)).((LANDSCAPE_APPS_DOMAIN))
   path: target/app-btp-object-store.jar
   services:
+    - objectstore-service
     - xsuaa-btp-objectstore
   env:
     IAS_XSUAA_XCHANGE_ENABLED: true

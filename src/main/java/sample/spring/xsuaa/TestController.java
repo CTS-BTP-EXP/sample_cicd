@@ -101,6 +101,8 @@ public class TestController {
         this.dataService = dataService;
     }
 
+    
+
     @GetMapping("/health")
     public String sayHello() { return "I'm alright"; }
 
@@ -116,10 +118,8 @@ public class TestController {
     
     @GetMapping("/v1/ListObjects")
     public ListObjectsV2Result ListObjects() {
-    //return "Goodbye from Spring Boot";
-    final String USAGE = "\n" + "To run this example, supply the name of a bucket to list!\n" + "\n"
-                + "Ex: ListObjects <bucket-name>\n";
-        String bucket_name = "myawsbucket-alag";
+
+        //String bucket_name = "myawsbucket-alag";
         // if (args.length < 1) {
         // System.out.println(USAGE);
         // System.exit(1);
@@ -132,17 +132,17 @@ public class TestController {
         // AmazonS3ClientBuilder.standard().withRegion("us-east-2").build();
         // AWSCredentialsProvider sd = new AWSCredentialsProvider(ds);
 
-        BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
-                "Access Secret Key");
+        BasicAWSCredentials aws = new BasicAWSCredentials(AWSConfig.access_key,
+        AWSConfig.access_secret);
         StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
         // final AmazonS3 s3 =
         // AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(sd).build();
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(AWSConfig.region).withCredentials(scp).build();
         // AmazonS3Client s4 = AmazonS3Client.builder().creden
         // Bucket bucket = s3.createBucket("check");
 
-        System.out.format("Objects in S3 bucket %s:\n", bucket_name);
-        ListObjectsV2Result result = s3.listObjectsV2(bucket_name);
+        System.out.format("Objects in S3 bucket %s:\n", AWSConfig.bucket_name);
+        ListObjectsV2Result result = s3.listObjectsV2(AWSConfig.bucket_name);
         List<S3ObjectSummary> objects = result.getObjectSummaries();
         for (S3ObjectSummary os : objects) {
             System.out.println("* " + os.getKey());
@@ -153,19 +153,18 @@ public class TestController {
     @GetMapping("/v1/ListVersionsRequest")
     public List<S3VersionSummary> ListVersionsRequest() {
         //return "Goodbye from Spring Boot";
-        final String USAGE = "\n" + "To run this example, supply the name of a bucket to list!\n" + "\n"
-                    + "Ex: ListObjects <bucket-name>\n";
-            String bucket_name = "myawsbucket-alag";
     
-            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
-                    "Access Secret Key");
-            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
-            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+        BasicAWSCredentials aws = new BasicAWSCredentials(AWSConfig.access_key,
+        AWSConfig.access_secret);
+        StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+        // final AmazonS3 s3 =
+        // AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(sd).build();
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(AWSConfig.region).withCredentials(scp).build();
         
         // Retrieve the list of versions. If the bucket contains more versions
         // than the specified maximum number of results, Amazon S3 returns
         // one page of results per request.
-    ListVersionsRequest request = new ListVersionsRequest().withBucketName(bucket_name).withMaxResults(200);
+    ListVersionsRequest request = new ListVersionsRequest().withBucketName(AWSConfig.bucket_name).withMaxResults(200);
     VersionListing versionListing = s3.listVersions(request);
     int numVersions = 0, numPages = 0;
     
@@ -189,17 +188,17 @@ public class TestController {
 
         @GetMapping("/v1/BucketVersionHandler")
         public String BucketVersionHandler() {
-		
-            String bucket_name = "myawsbucket-alag";
     
-            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
-                    "Access Secret Key");
-            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
-            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+            BasicAWSCredentials aws = new BasicAWSCredentials(AWSConfig.access_key,
+        AWSConfig.access_secret);
+        StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+        // final AmazonS3 s3 =
+        // AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(sd).build();
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(AWSConfig.region).withCredentials(scp).build();
             
             // Enable versioning on the bucket.
             BucketVersioningConfiguration configuration = new BucketVersioningConfiguration().withStatus("Enabled");            
-            SetBucketVersioningConfigurationRequest setBucketVersioningConfigurationRequest = new SetBucketVersioningConfigurationRequest(bucket_name,configuration);
+            SetBucketVersioningConfigurationRequest setBucketVersioningConfigurationRequest = new SetBucketVersioningConfigurationRequest(AWSConfig.bucket_name,configuration);
             s3.setBucketVersioningConfiguration(setBucketVersioningConfigurationRequest);
             return "Bucket Versioning Modified";
 
@@ -207,36 +206,37 @@ public class TestController {
 
         @GetMapping("/v1/BucketVersionStatus")
         public BucketVersioningConfiguration BucketVersionStatus() {
-		
-            String bucket_name = "myawsbucket-alag";
     
-            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
-                    "Access Secret Key");
-            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
-            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+            BasicAWSCredentials aws = new BasicAWSCredentials(AWSConfig.access_key,
+        AWSConfig.access_secret);
+        StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+        // final AmazonS3 s3 =
+        // AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(sd).build();
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(AWSConfig.region).withCredentials(scp).build();
     
             // Get bucket versioning configuration information.
-            BucketVersioningConfiguration conf = s3.getBucketVersioningConfiguration(bucket_name);
+            BucketVersioningConfiguration conf = s3.getBucketVersioningConfiguration(AWSConfig.bucket_name);
             System.out.println("bucket versioning configuration status:    " + conf.getStatus());
             return conf ;
         }
         
         @GetMapping("/v1/GetObject")
         public String GetObject() {
-		
-            String bucket_name = "myawsbucket-alag";
+
             String object_key = "customer.tbl";
     
-            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
-                    "Access Secret Key");
-            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
-            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+            BasicAWSCredentials aws = new BasicAWSCredentials(AWSConfig.access_key,
+        AWSConfig.access_secret);
+        StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+        // final AmazonS3 s3 =
+        // AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(sd).build();
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(AWSConfig.region).withCredentials(scp).build();
     
 
     System.out.format("Downloading object %s from S3 bucket: %s\n", object_key,
-            bucket_name);
+    AWSConfig.bucket_name);
     try {
-        s3.getObject(new GetObjectRequest(bucket_name, object_key));
+        s3.getObject(new GetObjectRequest(AWSConfig.bucket_name, object_key));
     } catch (AmazonServiceException e) {
         System.err.println(e.getErrorMessage());
         System.exit(1);
@@ -248,19 +248,20 @@ public class TestController {
         @GetMapping("/v1/DeleteObject")
         public String DeleteObject() {
 		
-            String bucket_name = "myawsbucket-alag";
             String object_key = "nation.tbl";
     
-            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
-                    "Access Secret Key");
-            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
-            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+            BasicAWSCredentials aws = new BasicAWSCredentials(AWSConfig.access_key,
+        AWSConfig.access_secret);
+        StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+        // final AmazonS3 s3 =
+        // AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(sd).build();
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(AWSConfig.region).withCredentials(scp).build();
     
 
     System.out.format("Deleting object %s from S3 bucket: %s\n", object_key,
-            bucket_name);
+    AWSConfig.bucket_name);
     try {
-        s3.deleteObject(bucket_name, object_key);
+        s3.deleteObject(AWSConfig.bucket_name, object_key);
     } catch (AmazonServiceException e) {
         System.err.println(e.getErrorMessage());
         System.exit(1);
@@ -272,20 +273,21 @@ public class TestController {
         @GetMapping("/v1/DeleteObjectVersion")
         public String DeleteObjectVersion() {
 		
-            String bucket_name = "myawsbucket-alag";
             String object_key = "nation.tbl";
             String version_key = "SlZA0maq1ujOYQW1frQuJkyAvCWt5_1e";
     
-            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
-                    "Access Secret Key");
-            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
-            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+            BasicAWSCredentials aws = new BasicAWSCredentials(AWSConfig.access_key,
+        AWSConfig.access_secret);
+        StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+        // final AmazonS3 s3 =
+        // AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(sd).build();
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(AWSConfig.region).withCredentials(scp).build();
     
 
     System.out.format("Deleting object %s from S3 bucket: %s\n", object_key,
-            bucket_name);
+    AWSConfig.bucket_name);
     try {
-        s3.deleteVersion(new DeleteVersionRequest(bucket_name, object_key, version_key));
+        s3.deleteVersion(new DeleteVersionRequest(AWSConfig.bucket_name, object_key, version_key));
     } catch (AmazonServiceException e) {
         System.err.println(e.getErrorMessage());
         System.exit(1);
@@ -303,18 +305,19 @@ public class TestController {
             LocalDateTime now = LocalDateTime.now();  
             System.out.println(dtf.format(now));  
 		
-            String bucket_name = "myawsbucket-alag";
             String file_content = "Sample File Upload  " + dtf.format(now);
             String file_name = "PutFileNewMethod.txt"; 
       
-            BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
-                    "Access Secret Key");
-            StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
-            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+            BasicAWSCredentials aws = new BasicAWSCredentials(AWSConfig.access_key,
+        AWSConfig.access_secret);
+        StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
+        // final AmazonS3 s3 =
+        // AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(sd).build();
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(AWSConfig.region).withCredentials(scp).build();
     
-        System.out.format("Uploading %s to S3 bucket %s...\n", file_name, bucket_name);
+        System.out.format("Uploading %s to S3 bucket %s...\n", file_name, AWSConfig.bucket_name);
         try {
-            s3.putObject(bucket_name, file_name, file_content);
+            s3.putObject(AWSConfig.bucket_name, file_name, file_content);
         } catch (AmazonServiceException e) {
             System.err.println(e.getErrorMessage());
             System.exit(1);
@@ -327,15 +330,17 @@ public class TestController {
     @GetMapping("/v1/GetObjects")
     public JSONObject GetObjects() {
 
-        String bucket_name = "myawsbucket-alag";
+
         String file_name = "PutFileNewMethod.txt"; 
   
-        BasicAWSCredentials aws = new BasicAWSCredentials("Access Key",
-                "Access Secret Key");
+        BasicAWSCredentials aws = new BasicAWSCredentials(AWSConfig.access_key,
+        AWSConfig.access_secret);
         StaticCredentialsProvider scp = new StaticCredentialsProvider(aws);
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(scp).build();
+        // final AmazonS3 s3 =
+        // AmazonS3ClientBuilder.standard().withRegion("us-east-2").withCredentials(sd).build();
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(AWSConfig.region).withCredentials(scp).build();
         
-        S3Object o = s3.getObject(bucket_name, file_name);
+        S3Object o = s3.getObject(AWSConfig.bucket_name, file_name);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(o.getObjectContent()));
 		StringBuilder sbuilder = new StringBuilder();
 		String line;
